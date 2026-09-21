@@ -77,5 +77,5 @@ You can:
 ## Contact
 
 - General questions and bug reports:
-  `https://github.com/eduardoarantes/cycling_coach_browser_plugin/issues`
+  `https://github.com/PlanMyPeak/cycling_coach_browser_plugin/issues`
 - Sensitive security matters: follow [SECURITY.md](./SECURITY.md)

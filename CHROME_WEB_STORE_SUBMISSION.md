@@ -102,8 +102,8 @@ Browse your TrainingPeaks workout libraries without leaving your browser.
 
 ## Support
 
-- GitHub: https://github.com/eduardoarantes/cycling_coach_browser_plugin
-- Issues: https://github.com/eduardoarantes/cycling_coach_browser_plugin/issues
+- GitHub: https://github.com/PlanMyPeak/cycling_coach_browser_plugin
+- Issues: https://github.com/PlanMyPeak/cycling_coach_browser_plugin/issues
 
 **Note**: This is an independent project and is not affiliated with TrainingPeaks.
 ```
@@ -255,13 +255,13 @@ git push
 # Enable GitHub Pages
 # Go to repo settings → Pages → Source: main branch
 # Privacy policy will be at:
-# https://eduardoarantes.github.io/cycling_coach_browser_plugin/PRIVACY
+# https://planmypeak.github.io/cycling_coach_browser_plugin/PRIVACY
 ```
 
 ### Option 2: Raw GitHub File
 
 ```
-https://raw.githubusercontent.com/eduardoarantes/cycling_coach_browser_plugin/main/PRIVACY.md
+https://raw.githubusercontent.com/PlanMyPeak/cycling_coach_browser_plugin/main/PRIVACY.md
 ```
 
 ### Option 3: Host on Your Website

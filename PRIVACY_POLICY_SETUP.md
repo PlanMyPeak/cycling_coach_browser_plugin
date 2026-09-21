@@ -17,7 +17,7 @@ This will upload PRIVACY.md to your GitHub repository.
 Once pushed, use this URL in your Chrome Web Store submission:
 
 ```
-https://raw.githubusercontent.com/eduardoarantes/cycling_coach_browser_plugin/main/PRIVACY.md
+https://raw.githubusercontent.com/PlanMyPeak/cycling_coach_browser_plugin/main/PRIVACY.md
 ```
 
 **Test it**: Open that URL in your browser after pushing. It should show the privacy policy text.
@@ -36,7 +36,7 @@ git push origin main
 
 ### Step 2: Enable GitHub Pages
 
-1. Go to: https://github.com/eduardoarantes/cycling_coach_browser_plugin/settings/pages
+1. Go to: https://github.com/PlanMyPeak/cycling_coach_browser_plugin/settings/pages
 2. Under "Source", select: **main** branch
 3. Click **Save**
 4. Wait 1-2 minutes for deployment
@@ -46,13 +46,13 @@ git push origin main
 After GitHub Pages is enabled, your privacy policy will be at:
 
 ```
-https://eduardoarantes.github.io/cycling_coach_browser_plugin/PRIVACY.md
+https://planmypeak.github.io/cycling_coach_browser_plugin/PRIVACY.md
 ```
 
 Or create a prettier version at:
 
 ```
-https://eduardoarantes.github.io/cycling_coach_browser_plugin/privacy
+https://planmypeak.github.io/cycling_coach_browser_plugin/privacy
 ```
 
 ---
@@ -62,7 +62,7 @@ https://eduardoarantes.github.io/cycling_coach_browser_plugin/privacy
 **Use GitHub Raw URL** - It works immediately after pushing:
 
 ```
-https://raw.githubusercontent.com/eduardoarantes/cycling_coach_browser_plugin/main/PRIVACY.md
+https://raw.githubusercontent.com/PlanMyPeak/cycling_coach_browser_plugin/main/PRIVACY.md
 ```
 
 **Advantages**:
@@ -90,7 +90,7 @@ After pushing, test the URL in your browser:
 git push origin main
 
 # Wait 10 seconds, then open in browser:
-# https://raw.githubusercontent.com/eduardoarantes/cycling_coach_browser_plugin/main/PRIVACY.md
+# https://raw.githubusercontent.com/PlanMyPeak/cycling_coach_browser_plugin/main/PRIVACY.md
 ```
 
 If you see your privacy policy text, you're all set!
@@ -104,7 +104,7 @@ Use this privacy policy URL in your Chrome Web Store submission:
 **Privacy Policy URL**:
 
 ```
-https://raw.githubusercontent.com/eduardoarantes/cycling_coach_browser_plugin/main/PRIVACY.md
+https://raw.githubusercontent.com/PlanMyPeak/cycling_coach_browser_plugin/main/PRIVACY.md
 ```
 
 Copy this URL and paste it in the "Privacy Policy URL" field when submitting to Chrome Web Store.

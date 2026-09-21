@@ -610,8 +610,8 @@ src/
 
 ### Support
 
-- **Issues**: https://github.com/eduardoarantes/cycling_coach_browser_plugin/issues
-- **Discussions**: https://github.com/eduardoarantes/cycling_coach_browser_plugin/discussions
+- **Issues**: https://github.com/PlanMyPeak/cycling_coach_browser_plugin/issues
+- **Discussions**: https://github.com/PlanMyPeak/cycling_coach_browser_plugin/discussions
 
 ---
 

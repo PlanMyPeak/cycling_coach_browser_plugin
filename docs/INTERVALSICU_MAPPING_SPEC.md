@@ -534,6 +534,6 @@ External comparison:
 
 Issue tracking:
 
-- Issue #75: `https://github.com/eduardoarantes/cycling_coach_browser_plugin/issues/75`
+- Issue #75: `https://github.com/PlanMyPeak/cycling_coach_browser_plugin/issues/75`
 - Issue #75 wiki (implementation plan): raw wiki page
 - Issue #75 wiki (redesign plan): raw wiki page

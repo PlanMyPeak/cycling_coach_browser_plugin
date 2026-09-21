@@ -1,11 +1,11 @@
 blank_issues_enabled: true
 contact_links:
   - name: Installation and Usage Guide
-    url: https://github.com/eduardoarantes/cycling_coach_browser_plugin/blob/HEAD/INSTALL.md
+    url: https://github.com/PlanMyPeak/cycling_coach_browser_plugin/blob/HEAD/INSTALL.md
     about: Read the install and first-use guide before opening a support issue.
   - name: Privacy and Permissions
-    url: https://github.com/eduardoarantes/cycling_coach_browser_plugin/blob/HEAD/docs/PRIVACY_AND_PERMISSIONS.md
+    url: https://github.com/PlanMyPeak/cycling_coach_browser_plugin/blob/HEAD/docs/PRIVACY_AND_PERMISSIONS.md
     about: Review data flow and permission details before filing privacy questions.
   - name: Security Reporting
-    url: https://github.com/eduardoarantes/cycling_coach_browser_plugin/blob/HEAD/SECURITY.md
+    url: https://github.com/PlanMyPeak/cycling_coach_browser_plugin/blob/HEAD/SECURITY.md
     about: Follow the security reporting instructions for sensitive issues.

@@ -444,7 +444,7 @@ If you need to revert to the old architecture:
 
 ### Questions?
 
-- **GitHub Issues**: https://github.com/eduardoarantes/cycling_coach_browser_plugin/issues
+- **GitHub Issues**: https://github.com/PlanMyPeak/cycling_coach_browser_plugin/issues
 - **Documentation**: See `docs/INTERVALSICU_INTEGRATION.md`
 
 ### Reporting Bugs
