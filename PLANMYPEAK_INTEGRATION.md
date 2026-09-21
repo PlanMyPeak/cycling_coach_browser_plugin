@@ -710,7 +710,7 @@ src/export/adapters/planMyPeak/
 
 ## Related Documentation
 
-- [Issue #51: Export Libraries & Workouts](https://github.com/eduardoarantes/cycling_coach_browser_plugin/issues/51)
+- [Issue #51: Export Libraries & Workouts](https://github.com/PlanMyPeak/cycling_coach_browser_plugin/issues/51)
 - [CLAUDE.md](./CLAUDE.md) - Project development guide
 - [TESTING.md](./TESTING.md) - Testing guide
 

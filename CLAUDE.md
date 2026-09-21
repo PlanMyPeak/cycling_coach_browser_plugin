@@ -1117,7 +1117,7 @@ directory, not in `docs/` or `openspec/`.
 
 ## Links & References
 
-**GitHub Issues**: [Issue #1](https://github.com/eduardoarantes/cycling_coach_browser_plugin/issues/1)
+**GitHub Issues**: [Issue #1](https://github.com/PlanMyPeak/cycling_coach_browser_plugin/issues/1)
 **Architecture**: `docs/Issue-1-TrainingPeaks-Plugin-Architecture.md`
 **Testing Guide**: `TESTING.md`
 **User Guide**: `README.md`

@@ -489,7 +489,7 @@ Add API key input to export dialog or settings.
 
 ## References
 
-- [Issue #51](https://github.com/eduardoarantes/cycling_coach_browser_plugin/issues/51)
+- [Issue #51](https://github.com/PlanMyPeak/cycling_coach_browser_plugin/issues/51)
 - [PLANMYPEAK_INTEGRATION.md](./PLANMYPEAK_INTEGRATION.md)
 - [EXPORT_UI_GUIDE.md](./EXPORT_UI_GUIDE.md)
 - [CLAUDE.md](./CLAUDE.md)
