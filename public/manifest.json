@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "PlanMyPeak Importer",
-  "version": "1.20.2",
+  "version": "1.20.14",
   "description": "Access your workout libraries and training plans directly from your browser",
   "permissions": ["storage", "tabs"],
   "host_permissions": [
