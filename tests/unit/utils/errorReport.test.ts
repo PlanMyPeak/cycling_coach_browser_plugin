@@ -34,6 +34,11 @@ describe('error report', () => {
     expect(classifyErrorMessage('HTTP 401 Unauthorized')).toBe(
       'authentication_required'
     );
+    expect(classifyErrorMessage('NO_TOKEN')).toBe('authentication_required');
+    expect(classifyErrorMessage('HTTP 403 Forbidden')).toBe(
+      'permission_denied'
+    );
+    expect(classifyErrorMessage('VALIDATION_ERROR')).toBe('validation_failed');
     expect(classifyErrorMessage('Workout title and URL')).toBe(
       'operation_failed'
     );

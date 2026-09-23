@@ -122,6 +122,8 @@ export function classifyErrorMessage(
 
   if (
     normalized.includes('401') ||
+    normalized.includes('no_token') ||
+    normalized.includes('auth') ||
     normalized.includes('unauthorized') ||
     normalized.includes('sign-in') ||
     normalized.includes('authentication')
