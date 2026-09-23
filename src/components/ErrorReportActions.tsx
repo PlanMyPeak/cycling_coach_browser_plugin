@@ -3,6 +3,7 @@ import { useState } from 'react';
 import {
   copyErrorReport,
   createErrorReport,
+  formatErrorReport,
   type ErrorReportContext,
   type ErrorReportCategory,
 } from '@/utils/errorReport';
@@ -20,11 +21,14 @@ export function ErrorReportActions({
   context,
   buttonClassName = 'rounded border border-red-300 bg-white px-3 py-1 text-xs font-medium text-red-800 hover:bg-red-50',
 }: ErrorReportActionsProps): ReactElement {
-  const [report] = useState(() => createErrorReport(category, context));
   const [message, setMessage] = useState<string | null>(null);
+  const [manualReport, setManualReport] = useState<string | null>(null);
 
   const handleCopy = async (): Promise<void> => {
-    const copied = await copyErrorReport(report);
+    const currentReport = createErrorReport(category, context);
+    const reportText = formatErrorReport(currentReport);
+    const copied = await copyErrorReport(currentReport);
+    setManualReport(copied ? null : reportText);
     setMessage(
       copied
         ? ERROR_BOUNDARY_STRINGS.REPORT_COPIED
@@ -50,6 +54,16 @@ export function ErrorReportActions({
         <p className="mt-2 text-[10px] text-red-700" role="status">
           {message}
         </p>
+      ) : null}
+      {manualReport ? (
+        <textarea
+          aria-label="Error report for manual copying"
+          readOnly
+          value={manualReport}
+          rows={7}
+          onFocus={(event) => event.currentTarget.select()}
+          className="mt-2 w-full rounded border border-red-300 bg-white p-2 text-[10px] text-gray-800"
+        />
       ) : null}
     </div>
   );

@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import { useState } from 'react';
 import type { ApiLogEntry } from '@/types/debugLog.types';
 import { ErrorReportActions } from '@/components/ErrorReportActions';
+import { classifyOperationName } from '@/utils/errorReport';
 
 interface ApiErrorNotificationProps {
   error: ApiLogEntry | null;
@@ -33,7 +34,8 @@ export function ApiErrorNotification({
         <div className="min-w-0">
           <p className="text-sm font-semibold">A request failed</p>
           <p className="mt-0.5 text-xs text-red-800">
-            {error.operationName} failed. Open API Logs for details.
+            {classifyOperationName(error.operationName)} failed. Open API Logs
+            for details.
           </p>
         </div>
         <button
@@ -46,7 +48,7 @@ export function ApiErrorNotification({
       </div>
       <ErrorReportActions
         category="operation_failed"
-        context={{ operation: error.operationName }}
+        context={{ operation: classifyOperationName(error.operationName) }}
         buttonClassName="rounded border border-red-300 bg-white px-2.5 py-1 text-xs font-medium text-red-800 hover:bg-red-100"
       />
     </div>

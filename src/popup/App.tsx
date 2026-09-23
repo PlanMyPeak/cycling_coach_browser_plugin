@@ -33,6 +33,7 @@ function App(): ReactElement {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('libraries');
   const [openLogs, setOpenLogs] = useState(false);
+  const [popupOpenedAt] = useState(() => Date.now());
   const { logs } = useDebugLogs();
   const {
     isAuthenticated: isTrainingPeaksAuthenticated,
@@ -53,7 +54,10 @@ function App(): ReactElement {
   const { pendingCount: pendingCapturedCount } = useCapturedWorkouts();
   const tpAuthRefresh = useProviderAuthRefresh('trainingpeaks');
   const canAccessTrainingPeaksData = isTrainingPeaksAuthenticated;
-  const latestFailedLog = logs.find((log) => !log.success) ?? null;
+  const recentErrorCutoff = popupOpenedAt - 15 * 60 * 1000;
+  const latestFailedLog =
+    logs.find((log) => !log.success && log.timestamp >= recentErrorCutoff) ??
+    null;
 
   // TrainingPeaks data should be visible as soon as TP authentication is ready.
   const { data: libraries } = useLibraries({
@@ -97,6 +101,15 @@ function App(): ReactElement {
     setActiveView('settings');
   };
 
+  const handleSettingsToggle = (): void => {
+    if (activeView === 'settings') {
+      setOpenLogs(false);
+      setActiveView('main');
+    } else {
+      setActiveView('settings');
+    }
+  };
+
   // Use wider layout for calendar view
   const isCalendarView =
     activeView === 'main' && activeTab === 'plans' && selectedPlanId !== null;
@@ -120,9 +133,7 @@ function App(): ReactElement {
         </div>
         <button
           type="button"
-          onClick={() =>
-            setActiveView(activeView === 'main' ? 'settings' : 'main')
-          }
+          onClick={handleSettingsToggle}
           aria-label={activeView === 'main' ? 'Open settings' : 'Back to main'}
           title={activeView === 'main' ? 'Settings' : 'Back'}
           className="rounded p-1.5 text-gray-700 hover:bg-gray-100"

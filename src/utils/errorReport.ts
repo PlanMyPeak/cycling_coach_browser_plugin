@@ -8,6 +8,15 @@
 export const SUPPORT_EMAIL = 'support@planmypeak.com';
 
 export type ErrorReportCategory = 'ui_error' | 'operation_failed';
+export type ErrorReportOperation =
+  | 'unknown_operation'
+  | 'api_request'
+  | 'export'
+  | 'load_data'
+  | 'trainingpeaks_libraries'
+  | 'trainingpeaks_library_items'
+  | 'trainingpeaks_athlete_groups'
+  | 'trainingpeaks_training_plans';
 export type ErrorReportFailureCode =
   | 'network_request_failed'
   | 'authentication_required'
@@ -17,7 +26,7 @@ export type ErrorReportFailureCode =
   | 'unexpected_error';
 
 export interface ErrorReportContext {
-  operation?: string;
+  operation?: ErrorReportOperation;
   failureCode?: ErrorReportFailureCode;
 }
 
@@ -51,12 +60,22 @@ function createReferenceId(): string {
 }
 
 function getBrowserMetadata(): { browser: string; platform: string } {
-  return {
+  try {
     // User-agent data is limited to browser/platform metadata and is capped
     // so it cannot become an accidental dump of arbitrary page data.
-    browser: navigator.userAgent.slice(0, 160),
-    platform: navigator.platform.slice(0, 80),
-  };
+    return {
+      browser:
+        typeof navigator.userAgent === 'string'
+          ? navigator.userAgent.slice(0, 160)
+          : 'unknown',
+      platform:
+        typeof navigator.platform === 'string'
+          ? navigator.platform.slice(0, 80)
+          : 'unknown',
+    };
+  } catch {
+    return { browser: 'unknown', platform: 'unknown' };
+  }
 }
 
 export function createErrorReport(
@@ -129,11 +148,34 @@ export function classifyErrorMessage(
   return 'unexpected_error';
 }
 
-export function buildSupportMailto(report: ErrorReport): string {
-  const subject = `PlanMyPeak extension error [${report.category}] ${report.referenceId}`;
-  const body = formatErrorReport(report).slice(0, 3000);
+/** Convert dynamic API operation names into a finite, non-sensitive code. */
+export function classifyOperationName(
+  operationName: string | undefined
+): ErrorReportOperation {
+  const normalized = operationName?.toLowerCase() ?? '';
 
-  return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  if (normalized.includes('athlete groups')) {
+    return 'trainingpeaks_athlete_groups';
+  }
+  if (normalized.startsWith('library ') && normalized.includes(' items')) {
+    return 'trainingpeaks_library_items';
+  }
+  if (normalized === 'libraries' || normalized.includes(' libraries')) {
+    return 'trainingpeaks_libraries';
+  }
+  if (
+    normalized === 'training plans' ||
+    normalized.includes('training plans')
+  ) {
+    return 'trainingpeaks_training_plans';
+  }
+  if (normalized.includes('export')) {
+    return 'export';
+  }
+  if (normalized) {
+    return 'api_request';
+  }
+  return 'unknown_operation';
 }
 
 export async function copyErrorReport(report: ErrorReport): Promise<boolean> {

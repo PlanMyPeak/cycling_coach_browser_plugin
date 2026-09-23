@@ -510,7 +510,10 @@ function SettingsPageContent({
         </div>
       </OptionalConnectionCard>
 
-      <DebugLogPanel initialExpanded={openLogs} />
+      <DebugLogPanel
+        key={openLogs ? 'logs-open' : 'logs-closed'}
+        initialExpanded={openLogs}
+      />
     </div>
   );
 }

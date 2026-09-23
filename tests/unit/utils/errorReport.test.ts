@@ -1,10 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  buildSupportMailto,
   classifyErrorMessage,
+  classifyOperationName,
   createErrorReport,
   formatErrorReport,
-  SUPPORT_EMAIL,
 } from '@/utils/errorReport';
 
 describe('error report', () => {
@@ -39,10 +38,19 @@ describe('error report', () => {
     );
   });
 
-  it('opens a URL-encoded draft to the private support address', () => {
+  it('maps dynamic operation names to safe operation codes', () => {
+    expect(classifyOperationName('coach 1234567 athlete groups')).toBe(
+      'trainingpeaks_athlete_groups'
+    );
+    expect(classifyOperationName('library 456 items')).toBe(
+      'trainingpeaks_library_items'
+    );
+  });
+
+  it('formats safe report context without dynamic identifiers', () => {
     const report = {
       category: 'ui_error' as const,
-      operation: 'export',
+      operation: 'trainingpeaks_library_items' as const,
       failureCode: 'network_request_failed' as const,
       referenceId: 'ABC123',
       extensionVersion: '1.2.3',
@@ -51,11 +59,10 @@ describe('error report', () => {
       timestamp: '2026-09-23T00:00:00.000Z',
     };
 
-    const mailto = buildSupportMailto(report);
+    const text = formatErrorReport(report);
 
-    expect(mailto.startsWith(`mailto:${SUPPORT_EMAIL}?`)).toBe(true);
-    expect(mailto).toContain('ABC123');
-    expect(mailto).toContain('PlanMyPeak%20extension%20error');
-    expect(mailto).not.toContain('Test Browser');
+    expect(text).toContain('Operation: trainingpeaks_library_items');
+    expect(text).toContain('Browser: Test Browser');
+    expect(text).not.toContain('456');
   });
 });
