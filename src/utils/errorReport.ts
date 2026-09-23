@@ -123,7 +123,7 @@ export function classifyErrorMessage(
   if (
     normalized.includes('401') ||
     normalized.includes('no_token') ||
-    normalized.includes('auth') ||
+    normalized.includes('authent') ||
     normalized.includes('unauthorized') ||
     normalized.includes('sign-in') ||
     normalized.includes('authentication')
@@ -148,6 +148,19 @@ export function classifyErrorMessage(
     return 'operation_failed';
   }
   return 'unexpected_error';
+}
+
+/** Classify the combined safe fields available on an API log entry. */
+export function classifyApiLogFailure(
+  errorCode: string | undefined,
+  status: number | null,
+  errorMessage: string | undefined
+): ErrorReportFailureCode {
+  return classifyErrorMessage(
+    [errorCode, status === null ? undefined : String(status), errorMessage]
+      .filter(Boolean)
+      .join(' ')
+  );
 }
 
 /** Convert dynamic API operation names into a finite, non-sensitive code. */

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import type { ApiLogEntry } from '@/types/debugLog.types';
 import { ErrorReportActions } from '@/components/ErrorReportActions';
 import {
-  classifyErrorMessage,
+  classifyApiLogFailure,
   classifyOperationName,
 } from '@/utils/errorReport';
 
@@ -54,14 +54,10 @@ export function ApiErrorNotification({
     return null;
   }
 
-  const failureCode = classifyErrorMessage(
-    [
-      error.errorCode,
-      error.status === null ? undefined : String(error.status),
-      error.errorMessage,
-    ]
-      .filter(Boolean)
-      .join(' ')
+  const failureCode = classifyApiLogFailure(
+    error.errorCode,
+    error.status,
+    error.errorMessage
   );
 
   const dismissAndOpenLogs = (): void => {

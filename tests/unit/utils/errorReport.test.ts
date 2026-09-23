@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  classifyApiLogFailure,
   classifyErrorMessage,
   classifyOperationName,
   createErrorReport,
@@ -38,10 +39,25 @@ describe('error report', () => {
     expect(classifyErrorMessage('HTTP 403 Forbidden')).toBe(
       'permission_denied'
     );
+    expect(classifyErrorMessage('403 Forbidden: authorization denied')).toBe(
+      'permission_denied'
+    );
     expect(classifyErrorMessage('VALIDATION_ERROR')).toBe('validation_failed');
     expect(classifyErrorMessage('Workout title and URL')).toBe(
       'operation_failed'
     );
+  });
+
+  it('classifies the combined API log failure fields', () => {
+    expect(classifyApiLogFailure('AUTH_ERROR', 401, 'Not authenticated')).toBe(
+      'authentication_required'
+    );
+    expect(classifyApiLogFailure(undefined, 403, 'authorization denied')).toBe(
+      'permission_denied'
+    );
+    expect(
+      classifyApiLogFailure('VALIDATION_ERROR', 422, 'schema mismatch')
+    ).toBe('validation_failed');
   });
 
   it('maps dynamic operation names to safe operation codes', () => {
