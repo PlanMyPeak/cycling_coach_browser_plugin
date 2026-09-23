@@ -9,12 +9,24 @@ interface ApiErrorNotificationProps {
   onViewLogs: () => void;
 }
 
+const DISMISSED_ERROR_ID_KEY = 'planmypeak-dismissed-api-error-id';
+
+function getDismissedErrorId(): string | null {
+  try {
+    return sessionStorage.getItem(DISMISSED_ERROR_ID_KEY);
+  } catch {
+    return null;
+  }
+}
+
 /** Top-level notification for the newest API failure. */
 export function ApiErrorNotification({
   error,
   onViewLogs,
 }: ApiErrorNotificationProps): ReactElement | null {
-  const [dismissedId, setDismissedId] = useState<string | null>(null);
+  const [dismissedId, setDismissedId] = useState<string | null>(
+    getDismissedErrorId
+  );
 
   if (!error || error.id === dismissedId) {
     return null;
@@ -22,6 +34,11 @@ export function ApiErrorNotification({
 
   const dismissAndOpenLogs = (): void => {
     setDismissedId(error.id);
+    try {
+      sessionStorage.setItem(DISMISSED_ERROR_ID_KEY, error.id);
+    } catch {
+      // The in-memory state still dismisses the notification for this popup.
+    }
     onViewLogs();
   };
 
