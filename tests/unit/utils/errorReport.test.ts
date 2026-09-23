@@ -19,6 +19,7 @@ describe('error report', () => {
 
     expect(report.extensionVersion).toBe('1.2.3');
     expect(report.category).toBe('operation_failed');
+    expect(report.operation).toBe('unknown_operation');
     expect(report.referenceId).toMatch(/^[A-Z0-9]+$/);
     expect(text).toContain('What happened? (Please describe the problem here)');
     expect(text).toContain('Failure code: unexpected_error');

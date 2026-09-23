@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   copyErrorReport,
   createErrorReport,
@@ -21,13 +21,18 @@ export function ErrorReportActions({
   context,
   buttonClassName = 'rounded border border-red-300 bg-white px-3 py-1 text-xs font-medium text-red-800 hover:bg-red-50',
 }: ErrorReportActionsProps): ReactElement {
+  const operation = context?.operation;
+  const failureCode = context?.failureCode;
+  const report = useMemo(
+    () => createErrorReport(category, { operation, failureCode }),
+    [category, operation, failureCode]
+  );
   const [message, setMessage] = useState<string | null>(null);
   const [manualReport, setManualReport] = useState<string | null>(null);
 
   const handleCopy = async (): Promise<void> => {
-    const currentReport = createErrorReport(category, context);
-    const reportText = formatErrorReport(currentReport);
-    const copied = await copyErrorReport(currentReport);
+    const reportText = formatErrorReport(report);
+    const copied = await copyErrorReport(report);
     setManualReport(copied ? null : reportText);
     setMessage(
       copied

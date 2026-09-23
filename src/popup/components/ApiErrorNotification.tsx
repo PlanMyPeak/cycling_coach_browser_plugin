@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ApiLogEntry } from '@/types/debugLog.types';
 import { ErrorReportActions } from '@/components/ErrorReportActions';
 import { classifyOperationName } from '@/utils/errorReport';
@@ -9,24 +9,36 @@ interface ApiErrorNotificationProps {
   onViewLogs: () => void;
 }
 
-const DISMISSED_ERROR_ID_KEY = 'planmypeak-dismissed-api-error-id';
-
-function getDismissedErrorId(): string | null {
-  try {
-    return sessionStorage.getItem(DISMISSED_ERROR_ID_KEY);
-  } catch {
-    return null;
-  }
-}
+const DISMISSED_ERROR_ID_KEY = 'dismissed_api_error_id';
 
 /** Top-level notification for the newest API failure. */
 export function ApiErrorNotification({
   error,
   onViewLogs,
 }: ApiErrorNotificationProps): ReactElement | null {
-  const [dismissedId, setDismissedId] = useState<string | null>(
-    getDismissedErrorId
-  );
+  const [dismissedId, setDismissedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    try {
+      void chrome.storage.session
+        .get(DISMISSED_ERROR_ID_KEY)
+        .then((data) => {
+          const storedId = data[DISMISSED_ERROR_ID_KEY];
+          if (isMounted && typeof storedId === 'string') {
+            setDismissedId(storedId);
+          }
+        })
+        .catch(() => undefined);
+    } catch {
+      // In-memory dismissal remains available if session storage is blocked.
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   if (!error || error.id === dismissedId) {
     return null;
@@ -35,7 +47,9 @@ export function ApiErrorNotification({
   const dismissAndOpenLogs = (): void => {
     setDismissedId(error.id);
     try {
-      sessionStorage.setItem(DISMISSED_ERROR_ID_KEY, error.id);
+      void chrome.storage.session
+        .set({ [DISMISSED_ERROR_ID_KEY]: error.id })
+        .catch(() => undefined);
     } catch {
       // The in-memory state still dismisses the notification for this popup.
     }
@@ -51,8 +65,7 @@ export function ApiErrorNotification({
         <div className="min-w-0">
           <p className="text-sm font-semibold">A request failed</p>
           <p className="mt-0.5 text-xs text-red-800">
-            {classifyOperationName(error.operationName)} failed. Open API Logs
-            for details.
+            {error.operationName} failed. Open API Logs for details.
           </p>
         </div>
         <button

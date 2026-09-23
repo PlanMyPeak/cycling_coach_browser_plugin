@@ -32,7 +32,7 @@ export interface ErrorReportContext {
 
 export interface ErrorReport {
   category: ErrorReportCategory;
-  operation: string;
+  operation: ErrorReportOperation;
   failureCode: ErrorReportFailureCode;
   referenceId: string;
   extensionVersion: string;
@@ -86,7 +86,7 @@ export function createErrorReport(
 
   return {
     category,
-    operation: context.operation ?? 'unknown',
+    operation: context.operation ?? 'unknown_operation',
     failureCode: context.failureCode ?? 'unexpected_error',
     referenceId: createReferenceId(),
     extensionVersion: getExtensionVersion(),

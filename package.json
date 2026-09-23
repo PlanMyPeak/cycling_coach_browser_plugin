@@ -1,6 +1,6 @@
 {
   "name": "planmypeak-importer",
-  "version": "1.20.11",
+  "version": "1.20.12",
   "description": "PlanMyPeak Importer - Browser Extension for Workout Library Access",
   "type": "module",
   "scripts": {
