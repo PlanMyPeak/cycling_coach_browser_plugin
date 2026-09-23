@@ -11,6 +11,8 @@ import {
   type ErrorInfo,
   type ReactElement,
 } from 'react';
+import { ErrorReportActions } from '@/components/ErrorReportActions';
+import { ERROR_BOUNDARY_STRINGS } from '@/utils/uiStrings';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -33,7 +35,10 @@ export class ErrorBoundary extends Component<
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error };
+    return {
+      hasError: true,
+      error,
+    };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
@@ -47,7 +52,10 @@ export class ErrorBoundary extends Component<
   }
 
   handleReset = (): void => {
-    this.setState({ hasError: false, error: null });
+    this.setState({
+      hasError: false,
+      error: null,
+    });
   };
 
   render(): ReactNode {
@@ -83,13 +91,16 @@ export class ErrorBoundary extends Component<
               <p className="mt-1 text-xs text-red-700">
                 {this.state.error?.message ?? 'An unexpected error occurred.'}
               </p>
-              <button
-                type="button"
-                onClick={this.handleReset}
-                className="mt-2 rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-800 hover:bg-red-200"
-              >
-                Try again
-              </button>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={this.handleReset}
+                  className="rounded bg-red-100 px-3 py-1 text-xs font-medium text-red-800 hover:bg-red-200"
+                >
+                  {ERROR_BOUNDARY_STRINGS.TRY_AGAIN}
+                </button>
+              </div>
+              <ErrorReportActions category="ui_error" />
             </div>
           </div>
         </div>

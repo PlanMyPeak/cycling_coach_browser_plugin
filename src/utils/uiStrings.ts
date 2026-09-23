@@ -93,6 +93,13 @@ export const ERROR_BOUNDARY_STRINGS = {
   TITLE: 'Something went wrong',
   DEFAULT_MESSAGE: 'An unexpected error occurred.',
   TRY_AGAIN: 'Try again',
+  SEND_REPORT: 'Copy report for email',
+  REPORT_COPIED:
+    'Report copied. Paste it into an email to support@planmypeak.com.',
+  REPORT_COPY_FAILED:
+    'Could not copy the report. Please email support@planmypeak.com.',
+  PRIVACY_NOTICE:
+    'The report contains limited diagnostic details. Review it and remove any personal or training information before emailing support@planmypeak.com.',
 } as const;
 
 /**

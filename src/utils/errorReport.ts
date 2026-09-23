@@ -1,0 +1,146 @@
+/**
+ * Builds the intentionally small, user-reviewable support report.
+ *
+ * This must not consume raw exception text or API logs: those can contain
+ * private training data even after credentials have been redacted.
+ */
+
+export const SUPPORT_EMAIL = 'support@planmypeak.com';
+
+export type ErrorReportCategory = 'ui_error' | 'operation_failed';
+export type ErrorReportFailureCode =
+  | 'network_request_failed'
+  | 'authentication_required'
+  | 'permission_denied'
+  | 'validation_failed'
+  | 'operation_failed'
+  | 'unexpected_error';
+
+export interface ErrorReportContext {
+  operation?: string;
+  failureCode?: ErrorReportFailureCode;
+}
+
+export interface ErrorReport {
+  category: ErrorReportCategory;
+  operation: string;
+  failureCode: ErrorReportFailureCode;
+  referenceId: string;
+  extensionVersion: string;
+  browser: string;
+  platform: string;
+  timestamp: string;
+}
+
+function getExtensionVersion(): string {
+  try {
+    return chrome.runtime.getManifest().version;
+  } catch {
+    return 'unknown';
+  }
+}
+
+function createReferenceId(): string {
+  try {
+    return crypto.randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase();
+  } catch {
+    return `${Date.now().toString(36)}${Math.random()
+      .toString(36)
+      .slice(2, 8)}`.toUpperCase();
+  }
+}
+
+function getBrowserMetadata(): { browser: string; platform: string } {
+  return {
+    // User-agent data is limited to browser/platform metadata and is capped
+    // so it cannot become an accidental dump of arbitrary page data.
+    browser: navigator.userAgent.slice(0, 160),
+    platform: navigator.platform.slice(0, 80),
+  };
+}
+
+export function createErrorReport(
+  category: ErrorReportCategory = 'ui_error',
+  context: ErrorReportContext = {}
+): ErrorReport {
+  const metadata = getBrowserMetadata();
+
+  return {
+    category,
+    operation: context.operation ?? 'unknown',
+    failureCode: context.failureCode ?? 'unexpected_error',
+    referenceId: createReferenceId(),
+    extensionVersion: getExtensionVersion(),
+    ...metadata,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+export function formatErrorReport(report: ErrorReport): string {
+  return [
+    'PlanMyPeak Browser Extension error report',
+    '',
+    `Error category: ${report.category}`,
+    `Operation: ${report.operation}`,
+    `Failure code: ${report.failureCode}`,
+    `Reference ID: ${report.referenceId}`,
+    `Extension version: ${report.extensionVersion}`,
+    `Browser: ${report.browser}`,
+    `Platform: ${report.platform}`,
+    `Timestamp: ${report.timestamp}`,
+    '',
+    'What happened? (Please describe the problem here)',
+    '',
+    'Privacy note: Please review this draft and remove any personal, account, or training information before sending.',
+  ].join('\n');
+}
+
+/** Map user-visible failure text to a finite, non-sensitive support code. */
+export function classifyErrorMessage(
+  message: string | undefined
+): ErrorReportFailureCode {
+  const normalized = message?.toLowerCase() ?? '';
+
+  if (
+    normalized.includes('401') ||
+    normalized.includes('unauthorized') ||
+    normalized.includes('sign-in') ||
+    normalized.includes('authentication')
+  ) {
+    return 'authentication_required';
+  }
+  if (normalized.includes('403') || normalized.includes('forbidden')) {
+    return 'permission_denied';
+  }
+  if (normalized.includes('validation') || normalized.includes('schema')) {
+    return 'validation_failed';
+  }
+  if (
+    normalized.includes('failed to fetch') ||
+    normalized.includes('network') ||
+    normalized.includes('timeout') ||
+    normalized.includes('fetch')
+  ) {
+    return 'network_request_failed';
+  }
+  if (message) {
+    return 'operation_failed';
+  }
+  return 'unexpected_error';
+}
+
+export function buildSupportMailto(report: ErrorReport): string {
+  const subject = `PlanMyPeak extension error [${report.category}] ${report.referenceId}`;
+  const body = formatErrorReport(report).slice(0, 3000);
+
+  return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+export async function copyErrorReport(report: ErrorReport): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(formatErrorReport(report));
+    return true;
+  } catch {
+    return false;
+  }
+}

@@ -8,6 +8,8 @@
 import type { ReactElement } from 'react';
 import { X as CloseIcon, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useExportProgress } from '@/hooks/useExportProgress';
+import { ErrorReportActions } from '@/components/ErrorReportActions';
+import { classifyErrorMessage } from '@/utils/errorReport';
 
 export function ExportProgressBanner(): ReactElement | null {
   const { progress, isExporting, isComplete, isFailed, percentage, dismiss } =
@@ -101,6 +103,13 @@ export function ExportProgressBanner(): ReactElement | null {
                   exported before the error
                 </p>
               )}
+              <ErrorReportActions
+                category="operation_failed"
+                context={{
+                  operation: 'export',
+                  failureCode: classifyErrorMessage(progress.error),
+                }}
+              />
             </div>
           </div>
           <button

@@ -6,6 +6,8 @@
  */
 
 import type { ReactElement } from 'react';
+import { ErrorReportActions } from '@/components/ErrorReportActions';
+import { classifyErrorMessage } from '@/utils/errorReport';
 
 export function LoadingState({ label }: { label: string }): ReactElement {
   return (
@@ -43,6 +45,13 @@ export function ErrorState({
       >
         Retry
       </button>
+      <ErrorReportActions
+        category="operation_failed"
+        context={{
+          operation: 'load_data',
+          failureCode: classifyErrorMessage(message),
+        }}
+      />
     </div>
   );
 }

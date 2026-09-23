@@ -6,6 +6,8 @@
 import type { ReactElement } from 'react';
 import { useState } from 'react';
 import type { ExportResult as ExportResultType } from '@/export/adapters/base';
+import { ErrorReportActions } from '@/components/ErrorReportActions';
+import { classifyErrorMessage } from '@/utils/errorReport';
 import { PlanMyPeakSignInPrompt } from './PlanMyPeakSignInPrompt';
 
 interface ExportResultProps {
@@ -246,6 +248,15 @@ export function ExportResult({
                   </div>
                 </div>
               )}
+              <ErrorReportActions
+                category="operation_failed"
+                context={{
+                  operation: 'export',
+                  failureCode: result.authFailure
+                    ? 'authentication_required'
+                    : classifyErrorMessage(result.errors?.[0]),
+                }}
+              />
             </>
           )}
         </div>

@@ -13,6 +13,7 @@ import { SettingsPage } from './components/SettingsPage';
 import { ConnectionHealthSummary } from './components/ConnectionHealthSummary';
 import { PlanMyPeakEnvironmentIndicator } from './components/PlanMyPeakEnvironmentIndicator';
 import { ExportProgressBanner } from './components/ExportProgressBanner';
+import { ApiErrorNotification } from './components/ApiErrorNotification';
 import { AccountMismatchBanner } from './components/AccountMismatchBanner';
 import { useAuth } from '@/hooks/useAuth';
 import { useMyPeakAuth } from '@/hooks/useMyPeakAuth';
@@ -22,6 +23,7 @@ import { useLibraries } from '@/hooks/useLibraries';
 import { usePlanMyPeakEnvironment } from '@/hooks/usePlanMyPeakEnvironment';
 import { useCapturedWorkouts } from '@/hooks/useCapturedWorkouts';
 import { useProviderAuthRefresh } from '@/hooks/useProviderAuthRefresh';
+import { useDebugLogs } from '@/hooks/useDebugLogs';
 
 function App(): ReactElement {
   const [activeView, setActiveView] = useState<'main' | 'settings'>('main');
@@ -30,6 +32,8 @@ function App(): ReactElement {
   );
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('libraries');
+  const [openLogs, setOpenLogs] = useState(false);
+  const { logs } = useDebugLogs();
   const {
     isAuthenticated: isTrainingPeaksAuthenticated,
     isLoading: isTrainingPeaksAuthLoading,
@@ -49,6 +53,7 @@ function App(): ReactElement {
   const { pendingCount: pendingCapturedCount } = useCapturedWorkouts();
   const tpAuthRefresh = useProviderAuthRefresh('trainingpeaks');
   const canAccessTrainingPeaksData = isTrainingPeaksAuthenticated;
+  const latestFailedLog = logs.find((log) => !log.success) ?? null;
 
   // TrainingPeaks data should be visible as soon as TP authentication is ready.
   const { data: libraries } = useLibraries({
@@ -85,6 +90,11 @@ function App(): ReactElement {
     // coach must sign in), so no timer is needed here.
     await tpAuthRefresh.refresh();
     await refreshTrainingPeaksAuth();
+  };
+
+  const handleOpenLogs = (): void => {
+    setOpenLogs(true);
+    setActiveView('settings');
   };
 
   // Use wider layout for calendar view
@@ -130,6 +140,11 @@ function App(): ReactElement {
         hostLabel={planMyPeakHostLabel}
       />
 
+      <ApiErrorNotification
+        error={latestFailedLog}
+        onViewLogs={handleOpenLogs}
+      />
+
       <ExportProgressBanner />
 
       {activeView === 'settings' ? (
@@ -138,6 +153,7 @@ function App(): ReactElement {
           isIntervalsEnabled={isIntervalsEnabled}
           onPlanMyPeakEnabledChange={setPlanMyPeakEnabled}
           onIntervalsEnabledChange={setIntervalsEnabled}
+          openLogs={openLogs}
         />
       ) : (
         <>

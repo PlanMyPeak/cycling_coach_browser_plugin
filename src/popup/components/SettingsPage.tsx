@@ -40,6 +40,7 @@ interface SettingsPageProps {
   isIntervalsEnabled: boolean;
   onPlanMyPeakEnabledChange: (enabled: boolean) => Promise<void>;
   onIntervalsEnabledChange: (enabled: boolean) => Promise<void>;
+  openLogs?: boolean;
 }
 
 interface OptionalConnectionCardProps {
@@ -107,6 +108,7 @@ function SettingsPageContent({
   isIntervalsEnabled,
   onPlanMyPeakEnabledChange,
   onIntervalsEnabledChange,
+  openLogs = false,
 }: SettingsPageProps): ReactElement {
   const [activeHelpTopic, setActiveHelpTopic] =
     useState<IntegrationHelpTopic | null>(null);
@@ -508,7 +510,7 @@ function SettingsPageContent({
         </div>
       </OptionalConnectionCard>
 
-      <DebugLogPanel />
+      <DebugLogPanel initialExpanded={openLogs} />
     </div>
   );
 }

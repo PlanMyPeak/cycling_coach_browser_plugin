@@ -6,7 +6,7 @@
  */
 
 import type { ReactElement } from 'react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useDebugLogs } from '@/hooks/useDebugLogs';
 import type { ApiLogEntry, ApiLogsExport } from '@/types/debugLog.types';
 
@@ -125,8 +125,19 @@ function downloadJson(data: ApiLogsExport, filename: string): void {
  * Collapsible panel showing API call history with controls
  * for refreshing, exporting, and clearing logs.
  */
-export function DebugLogPanel(): ReactElement {
-  const [isExpanded, setIsExpanded] = useState(false);
+export function DebugLogPanel({
+  initialExpanded = false,
+}: {
+  initialExpanded?: boolean;
+}): ReactElement {
+  const [isExpanded, setIsExpanded] = useState(initialExpanded);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (initialExpanded) {
+      panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [initialExpanded]);
   const { logs, isLoading, refetch, clearLogs, isClearingLogs } =
     useDebugLogs();
 
@@ -162,7 +173,11 @@ export function DebugLogPanel(): ReactElement {
   const logCount = logs.length;
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white">
+    <div
+      ref={panelRef}
+      id="api-logs-panel"
+      className="rounded-lg border border-gray-200 bg-white"
+    >
       {/* Header - always visible */}
       <button
         type="button"
