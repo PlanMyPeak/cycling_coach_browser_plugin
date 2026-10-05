@@ -37,7 +37,7 @@ import type { ExportDestination } from '@/types/export.types';
 import type { PlanMyPeakExportConfig } from '@/types/planMyPeak.types';
 import type { PlanMyPeakAuthFailure } from '@/utils/planMyPeakAuthErrors';
 import { PLANMYPEAK_AUTH_MESSAGES } from '@/utils/uiStrings';
-import { exportTrainingPlanClassicWorkoutsToPlanMyPeak } from '@/export/adapters/planMyPeak';
+import { importTrainingPlanToPlanMyPeak } from '@/export/adapters/planMyPeak';
 import type {
   IntervalsIcuExportConfig,
   IntervalsTrainingPlanExportResult,
@@ -621,7 +621,7 @@ export function TrainingPlanList({
       );
 
       try {
-        const result = await exportTrainingPlanClassicWorkoutsToPlanMyPeak({
+        const result = await importTrainingPlanToPlanMyPeak({
           trainingPlan: bundle.trainingPlan,
           workouts: bundle.workouts,
           notes: bundle.notes,
