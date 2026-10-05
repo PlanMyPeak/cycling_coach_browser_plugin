@@ -20,6 +20,9 @@ export function ImportResult({
   onBackToSelection,
 }: ImportResultProps): ReactElement {
   const failed = outcome.items.filter((item) => !item.ok);
+  const withNotes = outcome.items.filter(
+    (item) => item.ok && item.notes && item.notes.length > 0
+  );
 
   return (
     <div className="space-y-3">
@@ -47,6 +50,21 @@ export function ImportResult({
           {failed.length > 0 ? `; ${failed.length} failed` : ''}.
         </p>
       </div>
+
+      {withNotes.length > 0 ? (
+        <div className="space-y-2 text-xs text-amber-900">
+          {withNotes.map((item) => (
+            <div key={item.name}>
+              <p className="font-medium">{item.name}: needs attention</p>
+              <ul className="mt-1 space-y-0.5 pl-3">
+                {(item.notes ?? []).map((note, index) => (
+                  <li key={index}>• {note}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {failed.length > 0 ? (
         <ul className="space-y-1 text-xs text-red-800">

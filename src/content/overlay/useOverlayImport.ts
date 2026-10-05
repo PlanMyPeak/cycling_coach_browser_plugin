@@ -23,7 +23,7 @@ import type { PlanMyPeakExportConfig } from '@/types/planMyPeak.types';
 import type { PlanMyPeakLibrary } from '@/schemas/planMyPeakApi.schema';
 import type { TrainingPlanExportProgressDialogState } from '@/types/export.types';
 import { planMyPeakAdapter } from '@/export/adapters/planMyPeak';
-import { exportTrainingPlanClassicWorkoutsToPlanMyPeak } from '@/export/adapters/planMyPeak/trainingPlanExport';
+import { importTrainingPlanToPlanMyPeak } from '@/export/adapters/planMyPeak/trainingPlanImport';
 import {
   findExistingPlanMyPeakLibraries,
   normalizeTargetLibraryNames,
@@ -54,6 +54,12 @@ export interface OverlayImportItemResult {
   importedCount: number;
   /** Reason this item failed, when it did */
   message?: string;
+  /**
+   * Things a successful import still wants the coach to know: sessions
+   * imported without their structure, skipped, or not supported. Server
+   * messages, verbatim.
+   */
+  notes?: string[];
 }
 
 export interface OverlayImportOutcome {
@@ -337,7 +343,7 @@ export function useOverlayImport(
             fetchPlanNotes(plan.planId),
           ]);
 
-          const result = await exportTrainingPlanClassicWorkoutsToPlanMyPeak({
+          const result = await importTrainingPlanToPlanMyPeak({
             trainingPlan: plan.plan,
             workouts,
             notes,
@@ -356,11 +362,15 @@ export function useOverlayImport(
           }
 
           destinations.push(result.fileName);
+          const outcomeNotes = result.warnings.map(
+            (warning) => warning.message
+          );
           items.push({
             kind: 'plan',
             name: plan.planName,
             ok: true,
             importedCount: result.itemsExported,
+            ...(outcomeNotes.length > 0 ? { notes: outcomeNotes } : {}),
           });
           advance(index, 'completed');
         } catch (error) {

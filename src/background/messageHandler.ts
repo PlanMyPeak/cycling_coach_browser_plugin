@@ -149,6 +149,14 @@ import {
   fetchPlanMyPeakCoach,
 } from './api/planMyPeak';
 import {
+  abandonPlanImport,
+  fetchPlanImport,
+  type PlanImportApiFailure,
+} from './api/planMyPeakPlanImport';
+import { startRawPlanImport } from './planImport/rawPlanImportRunner';
+import type { PlanImportResponse } from '@/schemas/planMyPeakPlanImport.schema';
+import type { RawPlanImportStart } from '@/types/planImport.types';
+import {
   createIntervalsFolder,
   deleteIntervalsFolder,
   findIntervalsLibraryFolderByName,
@@ -872,6 +880,61 @@ async function handleGetPlanMyPeakPlans(
 ): Promise<ApiResponse<PlanMyPeakPlanSummary[]>> {
   logger.debug('Handling GET_PLANMYPEAK_PLANS message:', filters);
   return await fetchPlanMyPeakPlans(filters, auth);
+}
+
+/**
+ * Raw training-plan import. The background fetches the native TrainingPeaks
+ * payloads itself and forwards them; the popup only learns ids and outcomes.
+ */
+async function handleStartPlanMyPeakPlanImport(
+  planId: number,
+  targetWorkoutLibraryId: string | null | undefined,
+  abandonImportId: string | undefined,
+  auth: PlanMyPeakRequestAuth
+): Promise<ApiResponse<RawPlanImportStart>> {
+  logger.debug('Handling START_PLANMYPEAK_PLAN_IMPORT message:', planId);
+  return await startRawPlanImport({
+    planId,
+    targetWorkoutLibraryId,
+    abandonImportId,
+    auth,
+  });
+}
+
+/** The import client's failures carry `details`; the popup gets the rest. */
+function planImportFailureToApiResponse(
+  error: PlanImportApiFailure
+): ApiResponse<never> {
+  return {
+    success: false,
+    error: {
+      message: error.message,
+      ...(error.status !== undefined ? { status: error.status } : {}),
+      ...(error.code ? { code: error.code } : {}),
+    },
+  };
+}
+
+async function handleGetPlanMyPeakPlanImport(
+  importId: string,
+  auth: PlanMyPeakRequestAuth
+): Promise<ApiResponse<PlanImportResponse>> {
+  logger.debug('Handling GET_PLANMYPEAK_PLAN_IMPORT message:', importId);
+  const result = await fetchPlanImport(importId, auth);
+  return result.success
+    ? { success: true, data: result.data }
+    : planImportFailureToApiResponse(result.error);
+}
+
+async function handleAbandonPlanMyPeakPlanImport(
+  importId: string,
+  auth: PlanMyPeakRequestAuth
+): Promise<ApiResponse<PlanImportResponse>> {
+  logger.debug('Handling ABANDON_PLANMYPEAK_PLAN_IMPORT message:', importId);
+  const result = await abandonPlanImport(importId, auth);
+  return result.success
+    ? { success: true, data: result.data }
+    : planImportFailureToApiResponse(result.error);
 }
 
 async function handleUpsertPlanMyPeakPlanEntry(
@@ -1599,6 +1662,26 @@ export async function handleMessage(
       return await handleUpdatePlanMyPeakPlan(
         message.planId,
         message.payload,
+        requestAuth(message)
+      );
+
+    case 'START_PLANMYPEAK_PLAN_IMPORT':
+      return await handleStartPlanMyPeakPlanImport(
+        message.planId,
+        message.targetWorkoutLibraryId,
+        message.abandonImportId,
+        requestAuth(message)
+      );
+
+    case 'GET_PLANMYPEAK_PLAN_IMPORT':
+      return await handleGetPlanMyPeakPlanImport(
+        message.importId,
+        requestAuth(message)
+      );
+
+    case 'ABANDON_PLANMYPEAK_PLAN_IMPORT':
+      return await handleAbandonPlanMyPeakPlanImport(
+        message.importId,
         requestAuth(message)
       );
 

@@ -2,9 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   PlanMyPeakCoachSchema,
   PlanMyPeakCreateWorkoutResponseSchema,
+  PlanMyPeakKnownWorkoutTypeSchema,
   PlanMyPeakLibrariesResponseSchema,
+  PlanMyPeakPlanDetailSchema,
   PlanMyPeakWorkoutLibraryResponseSchema,
+  formatPlanMyPeakWorkoutTypeLabel,
   getCoachTrainingPeaksExternalId,
+  isKnownPlanMyPeakWorkoutType,
 } from '@/schemas/planMyPeakApi.schema';
 
 /** A workout row as PlanMyPeak returns it, used as the base for these cases. */
@@ -209,13 +213,18 @@ describe('planMyPeakApi schemas', () => {
     expect(parsed.rideType).toBe('some_new_classification');
   });
 
-  it('rejects a workoutType outside the accepted vocabulary', () => {
-    // We *send* this one, so a wrong value is our bug and should be loud.
-    expect(() =>
+  it('rejects a workoutType outside the accepted vocabulary on the write side only', () => {
+    // We *send* one of these, so a wrong value there is our bug and should be
+    // loud. A read is different: the server adds types on its own schedule,
+    // and a response is never ours to refuse over a type we do not know.
+    expect(PlanMyPeakKnownWorkoutTypeSchema.safeParse('cycling').success).toBe(
+      false
+    );
+    expect(
       PlanMyPeakCreateWorkoutResponseSchema.parse(
         workoutPayload({ workoutType: 'cycling' })
-      )
-    ).toThrow();
+      ).workoutType
+    ).toBe('cycling');
   });
 });
 
@@ -244,5 +253,110 @@ describe('getCoachTrainingPeaksExternalId', () => {
       getCoachTrainingPeaksExternalId(PlanMyPeakCoachSchema.parse({ id: 'x' }))
     ).toBeNull();
     expect(getCoachTrainingPeaksExternalId(null)).toBeNull();
+  });
+});
+
+describe('planMyPeakApi schemas - unknown workout types', () => {
+  /** A plan entry wrapping the given workout, as GET /workout-plans/:id returns it. */
+  function entryPayload(workout: Record<string, unknown>) {
+    return {
+      id: 'entry-1',
+      planId: 'plan-1',
+      weekNumber: 3,
+      dayOfWeek: 7,
+      position: 0,
+      note: null,
+      workout,
+      provider: 'training_peaks',
+      providerEntryId: 'event-987',
+      createdAt: '2026-09-20T00:00:00.000Z',
+      updatedAt: '2026-09-20T00:00:00.000Z',
+    };
+  }
+
+  it('parses a plan read whose entries include an event workout', () => {
+    const parsed = PlanMyPeakPlanDetailSchema.parse({
+      id: 'plan-1',
+      name: 'Marathon build',
+      description: null,
+      weekCount: 12,
+      entryCount: 1,
+      library: { id: 'plib-1', name: 'Road' },
+      provider: 'training_peaks',
+      providerPlanId: '100',
+      providerMetadata: null,
+      createdAt: '2026-09-20T00:00:00.000Z',
+      updatedAt: '2026-09-20T00:00:00.000Z',
+      entries: [
+        entryPayload(
+          workoutPayload({
+            id: 'wk-event',
+            name: 'City Marathon',
+            workoutType: 'event',
+            rideType: null,
+            summary: {
+              segmentCount: 0,
+              stepCount: 0,
+              estimatedDurationSeconds: null,
+            },
+            providerWorkoutId: 'event-987',
+            providerMetadata: {
+              eventType: 'Running',
+              distance: 42.195,
+              distanceUnits: 'km',
+            },
+          })
+        ),
+      ],
+    });
+
+    expect(parsed.entries[0].workout.workoutType).toBe('event');
+  });
+
+  it('parses a library listing that contains a workout type this build does not know', () => {
+    const parsed = PlanMyPeakWorkoutLibraryResponseSchema.parse({
+      data: [workoutPayload({ workoutType: 'trail_run' }), workoutPayload()],
+      pagination: { limit: 25, offset: 0, total: 2 },
+      facets: {
+        workoutType: { trail_run: 1, bike: 1 },
+        rideType: {},
+        duration: {},
+        total: 2,
+        incomplete: false,
+      },
+    });
+
+    expect(parsed.data.map((row) => row.workoutType)).toEqual([
+      'trail_run',
+      'bike',
+    ]);
+  });
+
+  it('still rejects an empty workout type', () => {
+    expect(() =>
+      PlanMyPeakCreateWorkoutResponseSchema.parse(
+        workoutPayload({ workoutType: '' })
+      )
+    ).toThrow();
+  });
+
+  it('keeps the write-side discipline list closed', () => {
+    expect(PlanMyPeakKnownWorkoutTypeSchema.safeParse('event').success).toBe(
+      false
+    );
+    expect(PlanMyPeakKnownWorkoutTypeSchema.safeParse('bike').success).toBe(
+      true
+    );
+    expect(isKnownPlanMyPeakWorkoutType('event')).toBe(false);
+    expect(isKnownPlanMyPeakWorkoutType('rest_day')).toBe(true);
+  });
+
+  it('labels known types properly and unknown ones generically', () => {
+    expect(formatPlanMyPeakWorkoutTypeLabel('mountain_bike')).toBe(
+      'Mountain bike'
+    );
+    expect(formatPlanMyPeakWorkoutTypeLabel('event')).toBe('Event');
+    expect(formatPlanMyPeakWorkoutTypeLabel('trail_run')).toBe('Trail run');
+    expect(formatPlanMyPeakWorkoutTypeLabel('  ')).toBe('Unknown');
   });
 });

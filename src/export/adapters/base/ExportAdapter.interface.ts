@@ -7,6 +7,7 @@
 
 import type { LibraryItem } from '@/types';
 import type { PlanMyPeakAuthFailure } from '@/utils/planMyPeakAuthErrors';
+import type { PlanImportReport } from '@/types/planImport.types';
 
 /**
  * Base configuration for all export adapters
@@ -62,6 +63,13 @@ export interface ExportResult {
    * that already landed are still reported alongside it.
    */
   authFailure?: PlanMyPeakAuthFailure;
+  /**
+   * Set when the destination converted the export itself (the raw
+   * training-plan import): the server's status and per-item outcomes, so a
+   * result view can show what was imported without structure, skipped, or
+   * not supported, beyond the flat warning list.
+   */
+  planImport?: PlanImportReport;
 }
 
 /** Outcome of exporting one item, identified by its provider id. */

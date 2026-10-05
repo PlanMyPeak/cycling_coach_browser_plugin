@@ -118,7 +118,7 @@ function notePlacementId(note: CalendarNote): string {
 const MAX_PLAN_WEEKS = 52;
 const MAX_ENTRY_POSITION = 50;
 
-interface ExportTrainingPlanClassicWorkoutsToPlanMyPeakOptions {
+export interface ExportTrainingPlanClassicWorkoutsToPlanMyPeakOptions {
   trainingPlan: TrainingPlan;
   workouts: PlanWorkout[];
   notes?: CalendarNote[];

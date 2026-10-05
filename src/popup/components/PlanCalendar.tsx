@@ -44,7 +44,7 @@ import type {
 import type { ExportResult as ExportResultType } from '@/export/adapters/base';
 import type { ExportDestination } from '@/types/export.types';
 import type { PlanMyPeakExportConfig } from '@/types/planMyPeak.types';
-import { exportTrainingPlanClassicWorkoutsToPlanMyPeak } from '@/export/adapters/planMyPeak';
+import { importTrainingPlanToPlanMyPeak } from '@/export/adapters/planMyPeak';
 import type {
   IntervalsIcuExportConfig,
   IntervalsPlanConflictAction,
@@ -685,7 +685,7 @@ export function PlanCalendar({
         classic.length
       );
 
-      const result = await exportTrainingPlanClassicWorkoutsToPlanMyPeak({
+      const result = await importTrainingPlanToPlanMyPeak({
         trainingPlan: selectedTrainingPlan,
         workouts: classic,
         notes: planNotes,

@@ -41,6 +41,7 @@ import type {
   AthleteGroup,
 } from '@/types/api.types';
 import type { PlanFolder } from '@/schemas/trainingPlan.schema';
+import type { ApiError as ApiErrorType } from '@/schemas/api.schema';
 import type { z } from 'zod';
 
 const MAX_VALIDATION_INPUT_LENGTH = 300;
@@ -227,26 +228,21 @@ function extractValidationErrorDetails(
 }
 
 /**
- * Generic API request handler with Zod validation
+ * The outcome of one authenticated GET, before any schema is applied.
  *
- * @template T - The expected response type
- * @param endpoint - API endpoint path
- * @param schema - Zod schema for response validation
- * @param operationName - Description for logging (e.g., "user profile", "libraries")
- * @param baseUrl - Optional base URL (defaults to API_BASE_URL)
- * @param options - Optional behavior flags. Set `includeRaw` to carry the
- *   unvalidated response JSON back on the success result. Off by default so
- *   endpoints with large payloads do not duplicate them across the
- *   background/popup message boundary for no consumer.
- * @returns Type-safe API response with success/error discriminated union
+ * Success carries the value of `response.json()` exactly as parsed. Every
+ * failure branch — no token, HTTP error, network error — is logged here once,
+ * so the validating and native paths cannot drift in what they record.
  */
-async function apiRequest<T>(
+type JsonFetchOutcome =
+  | { success: true; json: unknown; status: number; durationMs: number }
+  | { success: false; error: ApiErrorType };
+
+async function fetchJsonResponse(
   endpoint: string,
-  schema: z.ZodSchema<T>,
   operationName: string,
-  baseUrl?: string,
-  options?: { includeRaw?: boolean }
-): Promise<ApiResponse<T>> {
+  baseUrl?: string
+): Promise<JsonFetchOutcome> {
   const startTime = performance.now();
   const effectiveBaseUrl = baseUrl ?? (await getTrainingPeaksApiBaseUrl());
 
@@ -279,67 +275,9 @@ async function apiRequest<T>(
       };
     }
 
-    const json = await response.json();
+    const json: unknown = await response.json();
 
-    const validationResult = schema.safeParse(json);
-
-    if (!validationResult.success) {
-      const details = extractValidationErrorDetails(
-        validationResult.error,
-        json
-      );
-      const errorMessage = `Response validation failed at ${details.path}: ${details.message}`;
-
-      logger.error(`${operationName} validation failed:`, {
-        path: details.path,
-        message: details.message,
-        input: details.inputPreview,
-        issues: validationResult.error.issues,
-      });
-
-      void addLog({
-        timestamp: Date.now(),
-        endpoint,
-        method: 'GET',
-        baseUrl: effectiveBaseUrl,
-        status: response.status,
-        success: false,
-        durationMs,
-        errorMessage,
-        errorCode: 'VALIDATION_ERROR',
-        validationPath: details.path,
-        validationIssue: details.message,
-        validationInput: details.inputPreview,
-        operationName,
-      });
-
-      return {
-        success: false,
-        error: {
-          message: `${errorMessage}. Input: ${details.inputPreview}`,
-          code: 'VALIDATION_ERROR',
-        },
-      };
-    }
-
-    const validated = validationResult.data;
-
-    // Log success
-    void addLog({
-      timestamp: Date.now(),
-      endpoint,
-      method: 'GET',
-      baseUrl: effectiveBaseUrl,
-      status: response.status,
-      success: true,
-      durationMs,
-      operationName,
-    });
-
-    logger.info(`${operationName} fetched successfully`);
-    return options?.includeRaw
-      ? { success: true, data: validated, raw: json }
-      : { success: true, data: validated };
+    return { success: true, json, status: response.status, durationMs };
   } catch (error) {
     const durationMs = Math.round(performance.now() - startTime);
 
@@ -389,6 +327,159 @@ async function apiRequest<T>(
       },
     };
   }
+}
+
+/**
+ * Generic API request handler with Zod validation
+ *
+ * @param endpoint - API endpoint path
+ * @param schema - Zod schema for response validation
+ * @param operationName - Human-readable operation name for logging
+ * @param baseUrl - Optional base URL override (defaults to TP API base URL)
+ * @param options - Optional behavior flags. Set `includeRaw` to carry the
+ *   unvalidated JSON alongside the validated data.
+ * @returns Validated response data or error
+ */
+async function apiRequest<T>(
+  endpoint: string,
+  schema: z.ZodSchema<T>,
+  operationName: string,
+  baseUrl?: string,
+  options?: { includeRaw?: boolean }
+): Promise<ApiResponse<T>> {
+  const fetched = await fetchJsonResponse(endpoint, operationName, baseUrl);
+  if (!fetched.success) {
+    return fetched;
+  }
+
+  const effectiveBaseUrl = baseUrl ?? (await getTrainingPeaksApiBaseUrl());
+  const { json, status, durationMs } = fetched;
+
+  const validationResult = schema.safeParse(json);
+
+  if (!validationResult.success) {
+    const details = extractValidationErrorDetails(validationResult.error, json);
+    const errorMessage = `Response validation failed at ${details.path}: ${details.message}`;
+
+    logger.error(`${operationName} validation failed:`, {
+      path: details.path,
+      message: details.message,
+      input: details.inputPreview,
+      issues: validationResult.error.issues,
+    });
+
+    void addLog({
+      timestamp: Date.now(),
+      endpoint,
+      method: 'GET',
+      baseUrl: effectiveBaseUrl,
+      status,
+      success: false,
+      durationMs,
+      errorMessage,
+      errorCode: 'VALIDATION_ERROR',
+      validationPath: details.path,
+      validationIssue: details.message,
+      validationInput: details.inputPreview,
+      operationName,
+    });
+
+    return {
+      success: false,
+      error: {
+        message: `${errorMessage}. Input: ${details.inputPreview}`,
+        code: 'VALIDATION_ERROR',
+      },
+    };
+  }
+
+  const validated = validationResult.data;
+
+  // Log success
+  void addLog({
+    timestamp: Date.now(),
+    endpoint,
+    method: 'GET',
+    baseUrl: effectiveBaseUrl,
+    status,
+    success: true,
+    durationMs,
+    operationName,
+  });
+
+  logger.info(`${operationName} fetched successfully`);
+  return options?.includeRaw
+    ? { success: true, data: validated, raw: json }
+    : { success: true, data: validated };
+}
+
+/**
+ * Fetch an endpoint and return `response.json()` **untouched**.
+ *
+ * This is the native path the PlanMyPeak raw import forwards. Nothing here
+ * selects fields, strips unknown keys, defaults a null or drops a row: the
+ * schemas above build a separate read-only projection for the picker, and
+ * their output must never become an import payload (a stripped key or a
+ * `null` turned into `0` would be recorded server-side as TrainingPeaks'
+ * word). The only check is the one the server itself makes at its boundary,
+ * that a list endpoint returned a list, so declared counts can be taken from
+ * it; everything inside is opaque.
+ */
+async function fetchNativeJson(
+  endpoint: string,
+  operationName: string,
+  baseUrl?: string
+): Promise<ApiResponse<unknown>> {
+  const fetched = await fetchJsonResponse(endpoint, operationName, baseUrl);
+  if (!fetched.success) {
+    return fetched;
+  }
+
+  void addLog({
+    timestamp: Date.now(),
+    endpoint,
+    method: 'GET',
+    baseUrl: baseUrl ?? (await getTrainingPeaksApiBaseUrl()),
+    status: fetched.status,
+    success: true,
+    durationMs: fetched.durationMs,
+    operationName,
+  });
+
+  return { success: true, data: fetched.json };
+}
+
+async function fetchNativeList(
+  endpoint: string,
+  operationName: string,
+  baseUrl?: string
+): Promise<ApiResponse<unknown[]>> {
+  const result = await fetchNativeJson(endpoint, operationName, baseUrl);
+  if (!result.success) {
+    return result;
+  }
+
+  if (!Array.isArray(result.data)) {
+    return {
+      success: false,
+      error: {
+        message: `Expected ${operationName} to be a list, got ${describeJsonKind(result.data)}`,
+        code: 'VALIDATION_ERROR',
+      },
+    };
+  }
+
+  return { success: true, data: result.data };
+}
+
+function describeJsonKind(value: unknown): string {
+  if (value === null) {
+    return 'null';
+  }
+  if (Array.isArray(value)) {
+    return 'a list';
+  }
+  return typeof value === 'object' ? 'an object' : typeof value;
 }
 
 /**
@@ -606,4 +697,126 @@ export async function fetchRxBuilderWorkouts(
     `plan ${planId} rx builder workouts`,
     await getTrainingPeaksRxApiBaseUrl() // RxBuilder domain for the active environment
   );
+}
+
+/**
+ * The native TrainingPeaks payloads a raw plan import forwards to PlanMyPeak.
+ *
+ * Each field is the value `response.json()` produced for that endpoint, or
+ * for `plan` the element of the plan list whose `planId` matches — the same
+ * object, not a copy with fields selected. `folders` is the coach's whole
+ * folder list, because folder membership lives on the folder (`planIds`), so
+ * the server needs every folder to find the plan's.
+ *
+ * Presentation types (`TrainingPlan`, `PlanWorkout`, …) are deliberately not
+ * used here: they are what the picker renders, and a picker row that fails or
+ * is dropped must still reach the import untouched.
+ */
+export interface NativeTrainingPlanSources {
+  plan: unknown;
+  folders: unknown[];
+  planWorkouts: unknown[];
+  calendarNotes: unknown[];
+  calendarEvents: unknown[];
+  rxWorkouts: unknown[];
+}
+
+/** Read `planId` off a native plan row without asserting anything else. */
+function nativePlanIdOf(row: unknown): number | null {
+  if (row === null || typeof row !== 'object' || Array.isArray(row)) {
+    return null;
+  }
+  const value = (row as { planId?: unknown }).planId;
+  return typeof value === 'number' ? value : null;
+}
+
+/**
+ * Fetch every native payload of one training plan for the raw import path.
+ *
+ * Six GETs, all retained as-is (see `NativeTrainingPlanSources`). A failure on
+ * any of them fails the whole bundle: the import declares exact counts per
+ * kind at begin, so a kind we could not read cannot be sent as empty.
+ */
+export async function fetchNativeTrainingPlanSources(
+  planId: number
+): Promise<ApiResponse<NativeTrainingPlanSources>> {
+  const plansResult = await fetchNativeList(
+    '/plans/v1/plansWithAccess',
+    'training plans (native)'
+  );
+  if (!plansResult.success) {
+    return plansResult;
+  }
+
+  const plan = plansResult.data.find((row) => nativePlanIdOf(row) === planId);
+  if (plan === undefined) {
+    return {
+      success: false,
+      error: {
+        message: `Training plan ${planId} is not in the coach's TrainingPeaks plan list`,
+        code: 'NOT_FOUND',
+      },
+    };
+  }
+
+  const range = `${PLAN_DATE_RANGE.START_DATE}/${PLAN_DATE_RANGE.END_DATE}`;
+  const [folders, planWorkouts, calendarNotes, calendarEvents, rxWorkouts] =
+    await Promise.all([
+      fetchNativeList(
+        '/planfolder/v1/folder/all',
+        'training plan folders (native)'
+      ),
+      fetchNativeList(
+        `/plans/v1/plans/${planId}/workouts/${range}`,
+        `plan ${planId} workouts (native)`
+      ),
+      fetchNativeList(
+        `/plans/v1/plans/${planId}/calendarNote/${range}`,
+        `plan ${planId} notes (native)`
+      ),
+      fetchNativeList(
+        `/plans/v1/plans/${planId}/events/${range}`,
+        `plan ${planId} events (native)`
+      ),
+      fetchNativeList(
+        `/rx/activity/v1/plans/${planId}/workouts/${range}`,
+        `plan ${planId} rx builder workouts (native)`,
+        await getTrainingPeaksRxApiBaseUrl()
+      ),
+    ]);
+
+  for (const part of [
+    folders,
+    planWorkouts,
+    calendarNotes,
+    calendarEvents,
+    rxWorkouts,
+  ]) {
+    if (!part.success) {
+      return part;
+    }
+  }
+
+  // Narrowed above; TypeScript cannot see through the loop.
+  if (
+    !folders.success ||
+    !planWorkouts.success ||
+    !calendarNotes.success ||
+    !calendarEvents.success ||
+    !rxWorkouts.success
+  ) {
+    throw new Error('unreachable');
+  }
+
+  return {
+    success: true,
+    data: {
+      plan,
+      folders: folders.data,
+      planWorkouts: planWorkouts.data,
+      calendarNotes: calendarNotes.data,
+      calendarEvents: calendarEvents.data,
+      rxWorkouts: rxWorkouts.data,
+    },
+  };
 }
