@@ -280,6 +280,37 @@ export interface GetPlanMyPeakPlansMessage extends PlanMyPeakAuthRunScoped {
   providerPlanId?: string;
 }
 
+/**
+ * Start a raw training-plan import: the background fetches the plan's native
+ * TrainingPeaks payloads and forwards them to PlanMyPeak untouched (begin →
+ * parts → complete). The reply says whether to poll, fall back to the legacy
+ * client-side path, or join an import already in progress.
+ */
+export interface StartPlanMyPeakPlanImportMessage extends PlanMyPeakAuthRunScoped {
+  type: 'START_PLANMYPEAK_PLAN_IMPORT';
+  planId: number;
+  /** Only when the coach picked a library explicitly; the server has a default. */
+  targetWorkoutLibraryId?: string | null;
+  /**
+   * A staging import of this plan the coach explicitly chose to abandon
+   * after being told another window may be uploading it. Only that import
+   * is abandoned, and only while it is still staging.
+   */
+  abandonImportId?: string;
+}
+
+/** Read a raw import's status, summary and per-item outcomes. */
+export interface GetPlanMyPeakPlanImportMessage extends PlanMyPeakAuthRunScoped {
+  type: 'GET_PLANMYPEAK_PLAN_IMPORT';
+  importId: string;
+}
+
+/** Abandon a raw import that is still staging. */
+export interface AbandonPlanMyPeakPlanImportMessage extends PlanMyPeakAuthRunScoped {
+  type: 'ABANDON_PLANMYPEAK_PLAN_IMPORT';
+  importId: string;
+}
+
 /** Schedule or move one session. 201 scheduled, 200 moved. */
 export interface UpsertPlanMyPeakPlanEntryMessage extends PlanMyPeakAuthRunScoped {
   type: 'UPSERT_PLANMYPEAK_PLAN_ENTRY';
@@ -555,6 +586,9 @@ export type RuntimeMessage =
   | UpdatePlanMyPeakPlanMessage
   | GetPlanMyPeakPlanMessage
   | GetPlanMyPeakPlansMessage
+  | StartPlanMyPeakPlanImportMessage
+  | GetPlanMyPeakPlanImportMessage
+  | AbandonPlanMyPeakPlanImportMessage
   | UpsertPlanMyPeakPlanEntryMessage
   | DeletePlanMyPeakPlanEntryMessage
   | ImportAthleteGroupsToPlanMyPeakMessage

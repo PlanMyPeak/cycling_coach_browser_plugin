@@ -8,3 +8,4 @@ export {
   normalizeTpPlanWorkoutsToPlanMyPeakLibraryItems,
 } from './trainingPlanNormalizer';
 export { exportTrainingPlanClassicWorkoutsToPlanMyPeak } from './trainingPlanExport';
+export { importTrainingPlanToPlanMyPeak } from './trainingPlanImport';

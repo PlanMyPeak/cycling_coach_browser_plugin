@@ -340,7 +340,7 @@ async function sendApiRequest(
  * retry never re-enters this wrapper, so a second retry is impossible by
  * construction rather than by a counter.
  */
-async function makeApiRequest(
+export async function makeApiRequest(
   endpoint: string,
   init: RequestInit = {},
   auth?: PlanMyPeakRequestAuth
@@ -400,7 +400,7 @@ async function makeApiRequest(
  * The `ApiResponse` failure for an error thrown while obtaining a credential,
  * or null when `error` is something else.
  */
-function credentialFailure(
+export function credentialFailure(
   error: unknown
 ): { success: false; error: ApiError } | null {
   if (error instanceof PlanMyPeakCredentialError) {

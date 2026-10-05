@@ -516,6 +516,13 @@ export const STORAGE_KEYS = {
    * background worker through capturedImportOperations.
    */
   CAPTURED_IMPORT_OPERATIONS: 'captured_import_operations',
+  /**
+   * Raw training-plan imports in flight, keyed `environment:planId`. Holds
+   * the client operation id so a retry after a lost response reuses it, and
+   * the server's import id so a closed popup can poll the same import.
+   * Written only by the background worker through planImportOperationService.
+   */
+  PLAN_IMPORT_OPERATIONS: 'planmypeak_plan_import_operations',
 } as const;
 
 /**

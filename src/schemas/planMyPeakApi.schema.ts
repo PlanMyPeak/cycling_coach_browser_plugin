@@ -38,7 +38,10 @@ export type PlanMyPeakLibrariesResponse = z.infer<
   typeof PlanMyPeakLibrariesResponseSchema
 >;
 
-/** Disciplines PlanMyPeak accepts. We send these, so the enum is exact. */
+/**
+ * Disciplines this extension sends. The list is exact on the **write** side:
+ * a create request carries one of these and nothing else.
+ */
 export const PLANMYPEAK_WORKOUT_TYPES = [
   'bike',
   'mountain_bike',
@@ -55,11 +58,76 @@ export const PLANMYPEAK_WORKOUT_TYPES = [
   'other',
 ] as const;
 
-export const PlanMyPeakWorkoutTypeSchema = z.enum(PLANMYPEAK_WORKOUT_TYPES);
+/** Write side: the discipline a create request may carry. */
+export const PlanMyPeakKnownWorkoutTypeSchema = z.enum(
+  PLANMYPEAK_WORKOUT_TYPES
+);
 
 export type PlanMyPeakWorkoutTypeValue = z.infer<
+  typeof PlanMyPeakKnownWorkoutTypeSchema
+>;
+
+/**
+ * Read side: **tolerant** of disciplines this build does not know.
+ *
+ * The server adds workout types on its own schedule — `event` arrived with the
+ * raw plan import, which writes it for TrainingPeaks calendar events — and a
+ * read that rejects an unknown one fails the whole response: one such row in
+ * a library listing or a plan's entries would hide the coach's entire library
+ * or break a re-import. We only ever display a type we did not send, so an
+ * unknown value costs a generic label, not a parse failure. Never use this
+ * for what we send; that stays `PlanMyPeakKnownWorkoutTypeSchema`.
+ */
+export const PlanMyPeakWorkoutTypeSchema = z.string().min(1);
+
+export type PlanMyPeakWorkoutTypeRead = z.infer<
   typeof PlanMyPeakWorkoutTypeSchema
 >;
+
+export function isKnownPlanMyPeakWorkoutType(
+  value: string
+): value is PlanMyPeakWorkoutTypeValue {
+  return (PLANMYPEAK_WORKOUT_TYPES as readonly string[]).includes(value);
+}
+
+const PLANMYPEAK_WORKOUT_TYPE_LABELS: Record<
+  PlanMyPeakWorkoutTypeValue,
+  string
+> = {
+  bike: 'Bike',
+  mountain_bike: 'Mountain bike',
+  run: 'Run',
+  swim: 'Swim',
+  walk: 'Walk',
+  strength: 'Strength',
+  cross_train: 'Cross train',
+  cross_country_ski: 'Cross-country ski',
+  rowing: 'Rowing',
+  race: 'Race',
+  rest_day: 'Rest day',
+  note: 'Note',
+  other: 'Other',
+};
+
+/**
+ * Display label for a workout type read back from PlanMyPeak.
+ *
+ * Known types get their proper label; anything else is rendered generically
+ * from its code (`event` → "Event", `trail_run` → "Trail run") so a type this
+ * build predates still reads as a discipline rather than an error.
+ */
+export function formatPlanMyPeakWorkoutTypeLabel(value: string): string {
+  if (isKnownPlanMyPeakWorkoutType(value)) {
+    return PLANMYPEAK_WORKOUT_TYPE_LABELS[value];
+  }
+
+  const words = value.trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
+  if (words.length === 0) {
+    return 'Unknown';
+  }
+
+  return words.charAt(0).toUpperCase() + words.slice(1).toLowerCase();
+}
 
 /** Counts derived from the structure. `stepCount` is post-expansion. */
 const PlanMyPeakDerivedSummarySchema = z.object({
@@ -120,7 +188,8 @@ const PlanMyPeakLibraryRefSchema = z.object({
  * A workout as PlanMyPeak returns it.
  *
  * `rideType` is deliberately a loose string rather than an enum: the server
- * derives it and may add vocabulary, and we only ever display it.
+ * derives it and may add vocabulary, and we only ever display it. The same
+ * holds for `workoutType` on a read — see `PlanMyPeakWorkoutTypeSchema`.
  * `structure` is present on detail reads and absent from list rows.
  */
 export const PlanMyPeakWorkoutLibraryItemSchema = z.object({

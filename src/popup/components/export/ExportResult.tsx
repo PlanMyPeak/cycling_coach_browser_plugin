@@ -9,6 +9,7 @@ import type { ExportResult as ExportResultType } from '@/export/adapters/base';
 import { ErrorReportActions } from '@/components/ErrorReportActions';
 import { classifyErrorMessage } from '@/utils/errorReport';
 import { PlanMyPeakSignInPrompt } from './PlanMyPeakSignInPrompt';
+import { PlanImportOutcomes } from './PlanImportOutcomes';
 
 interface ExportResultProps {
   /** Export result data */
@@ -97,6 +98,9 @@ export function ExportResult({
         <div className="px-6 py-4 space-y-3">
           {result.authFailure && (
             <PlanMyPeakSignInPrompt authFailure={result.authFailure} />
+          )}
+          {result.planImport && (
+            <PlanImportOutcomes report={result.planImport} />
           )}
           {result.success ? (
             <>
